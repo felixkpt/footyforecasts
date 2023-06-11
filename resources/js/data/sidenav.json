@@ -1,0 +1,53 @@
+[
+    {
+        "title": "Posts",
+        "path": "/posts",
+        "icon": "bi-gear-fill",
+        "children": [
+            {
+                "title": "List",
+                "path": "/",
+                "icon": "bi-house-fill"
+            },
+            {
+                "title": "Create",
+                "path": "create",
+                "icon": "bi-info-circle-fill"
+            }
+        ]
+    },
+    {
+        "title": "Competitions",
+        "path": "/competitions",
+        "icon": "bi-gear-fill",
+        "children": [
+            {
+                "title": "List",
+                "path": "/",
+                "icon": "bi-house-fill"
+            },
+            {
+                "title": "Create",
+                "path": "create",
+                "icon": "bi-info-circle-fill"
+            }
+        ]
+    },
+    {
+        "title": "Teams",
+        "path": "/teams",
+        "icon": "bi-gear-fill",
+        "children": [
+            {
+                "title": "List",
+                "path": "/",
+                "icon": "bi-house-fill"
+            },
+            {
+                "title": "Create",
+                "path": "/create",
+                "icon": "bi-info-circle-fill"
+            }
+        ]
+    }
+]
