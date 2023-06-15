@@ -25,7 +25,7 @@ interface IEloquentRepository
      * @return Model
      */
     public function findById(
-        int $modelId,
+        $modelId,
         array $columns = ['*'],
         array $relations = [],
         array $appends = []
@@ -37,16 +37,25 @@ interface IEloquentRepository
     public function all(): Collection;
 
     /**
-     * @param int $modelId
+     * @param int|string $modelId
      * @param array $payload
      * @return bool
      */
-    public function  update(int $modelId, array $payload): bool;
+    public function update(int|string $modelId, array $payload): bool;
 
     /**
-     * @param int $modelId
+     * Create or update a record matching the attributes, and fill it with values.
+     *
+     * @param  array  $attributes
+     * @param  array  $values
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function updateOrCreate(array $attributes, array $payload): Model;
+
+    /**
+     * @param int|string $modelId
      * @return bool
      */
-    public function deleteById(int $modelId): bool;
+    public function deleteById(int|string $modelId): bool;
 
 }

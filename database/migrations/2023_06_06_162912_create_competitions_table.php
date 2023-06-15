@@ -12,15 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('competitions', function (Blueprint $table) {
-            $table->id();
-            $table->uuid();
+            $table->uuid('id')->primary();
             $table->string('name');
             $table->string('slug');
             $table->string('icon')->nullable();
-            $table->foreignId('country_id');
+            $table->string('country_id');
             $table->string('img')->nullable();
             $table->string('status');
-            $table->foreignId('user_id');
+            $table->string('user_id');
             $table->timestamps();
         });
     }

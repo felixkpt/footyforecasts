@@ -27,7 +27,7 @@ export default function SidebarItem({ item, path }: SidebarItemInterface | Sideb
     if (item.children) {
         return (
             <div className={open ? "sidebar-item open" : "sidebar-item"}>
-                <div className="sidebar-title" onClick={() => setOpen(!open)}>
+                <div className="sidebar-title cursor-default" onClick={() => setOpen(!open)}>
                     <span>
                         {item.icon && <span className="mr-1"><Icon icon={item.icon} /></span>}
                         {item.title}
@@ -41,7 +41,7 @@ export default function SidebarItem({ item, path }: SidebarItemInterface | Sideb
         )
     } else {
         return (
-            <Link href={(path + '/' + item.path).replace(/\/+/g, '/') || "#"} className="sidebar-item plain">
+            <Link href={(path + '/' + item.path).replace(/\/+/g, '/') || "#"} className="sidebar-item plain cursor-default">
                 {item.icon && <span className="mr-1"><Icon icon={item.icon} /></span>}
                 {item.title}
             </Link>

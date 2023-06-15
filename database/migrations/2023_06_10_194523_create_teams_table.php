@@ -13,15 +13,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('teams', function (Blueprint $table) {
-            $table->id();
-            $table->uuid();
+            $table->uuid('id')->primary();
             $table->string('name');
             $table->string('slug');
             $table->string('url');
-            $table->foreignId('competition_id');
-            $table->foreignId('country_id');
+            $table->string('competition_id');
+            $table->string('country_id');
             $table->string('img')->nullable();
-            $table->foreignId('user_id');
+            $table->string('user_id');
             $table->string('status');
             $table->dateTime('last_fetch')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->timestamps();

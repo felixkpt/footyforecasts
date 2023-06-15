@@ -2,20 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use LaracraftTech\LaravelDynamicModel\DynamicModel;
-use LaracraftTech\LaravelDynamicModel\DynamicModelFactory;
-
 class Competition extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUlids;
+
     protected $fillable = [
         'name',
         'slug',
         'country_id',
+        'img',
         'user_id',
-        'logo',
         'status',
     ];
 
@@ -26,7 +25,6 @@ class Competition extends Model
     }
 
 
-    protected $hidden = ['id', 'country_id', 'user_id'];
     public static function boot()
     {
         parent::boot();

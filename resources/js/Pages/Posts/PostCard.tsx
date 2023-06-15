@@ -1,6 +1,6 @@
 interface Props {
     post: {
-        uuid: string,
+        id: string,
         title: string,
         content_short: string,
         content: string,
@@ -10,7 +10,7 @@ interface Props {
 const PostCard = ({ post }: Props) => {
 
     return (
-        <div key={post.uuid} className="bg-white p-4">
+        <div key={post.id} className="bg-white p-4">
             <a href="single.html" className="block mb-4">
                 <img src="images/img_7_horizontal.jpg" alt="Image" className="w-full" />
             </a>

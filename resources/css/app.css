@@ -10,7 +10,6 @@
     overflow: auto;
 }
 
-
 .sidebar-item {
     padding: .75em 1em;
     display: block;
@@ -67,5 +66,9 @@
 }
 
 .form-control.is-invalid {
-    border-color: red!important;
+    border-color: rgb(175 36 36)!important;
+}
+
+.form-group .invalid-feedback {
+    color: rgb(175 36 36)!important;
 }

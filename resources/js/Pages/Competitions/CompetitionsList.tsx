@@ -6,7 +6,7 @@ interface CompetitionsInterface {
 }
 
 interface CompetitionInterface {
-    uuid: string,
+    id: string,
     name: string,
     slug: string,
 
@@ -17,8 +17,8 @@ const CompetitionsList = ({ competitions }: CompetitionsInterface) => {
     return (
             <div>
                 {competitions.map((competition: CompetitionInterface) => (
-                    <div key={competition.uuid}>
-                        <Link href={`/competitions/${competition.uuid}`}>{competition.name}</Link>
+                    <div key={competition.id}>
+                        <Link href={`/competitions/${competition.id}`}>{competition.name}</Link>
                     </div>
                 ))}
             </div>

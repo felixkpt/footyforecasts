@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Admin\Competitions;
 
 use App\Http\Controllers\Controller;
-use App\Models\Competition;
 use App\Models\Country;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use App\Models\Team;
+use App\Repositories\CompetitionRepository;
+use App\Repositories\EloquentRepository;
 use Inertia\Inertia;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\HttpClient\HttpClient;
@@ -19,21 +18,23 @@ class CompetitionsController extends Controller
 
     protected $country;
     protected $competition;
-    protected $hashids;
 
-    function __construct()
+    private $repo;
+
+    public function __construct(CompetitionRepository $repo)
     {
+        $this->repo = $repo;
     }
 
     function index()
     {
-        $countries = Country::with('competitions:id,uuid,country_id,name,img')->get()->toArray();
+        $countries = Country::with('competitions:id,country_id,name,img')->get()->toArray();
         return Inertia::render('Competitions/Index', compact('countries'));
     }
 
     function show($id)
     {
-        $competition = Competition::with('teams')->first()->toArray();
+        $competition = $this->repo->findById($id, ['*'], ['teams'])->toArray();
         return Inertia::render('Competitions/Competition/Show', compact('competition'));
     }
 
@@ -56,8 +57,6 @@ class CompetitionsController extends Controller
         $country_slug = array_slice($parts, -1)[0];
         $country = Str::title($country_slug);
         $this->saveCountry($country);
-
-        $browser = new HttpBrowser(HttpClient::create());
 
         $browser = new HttpBrowser(HttpClient::create());
 
@@ -93,12 +92,14 @@ class CompetitionsController extends Controller
 
     function saveCountry(string $country): void
     {
-        $this->country = Country::updateOrCreate(['name' => $country], [
+
+        $countryRepo = new EloquentRepository(Country::class);
+
+        $this->country = $countryRepo->updateOrCreate(['name' => $country], [
             'name' => $country,
             'slug' => Str::slug($country),
             'code' => '',
             'img' => '',
-            'user_id' => 1,
             'status' => 1,
         ]);
     }
@@ -107,17 +108,20 @@ class CompetitionsController extends Controller
     {
         ['name' => $competition, 'img' => $img] = $competition;
 
-        $this->competition = Competition::updateOrCreate(['name' => $competition], [
+        $competition = trim(preg_replace('#^Standings | table$#i', '', $competition));
+
+        $competition = trim(preg_replace('#' . $this->country->name . '#i', '', $competition));
+
+        $this->competition = $this->repo->updateOrCreate(['name' => $competition], [
             'name' => $competition,
             'slug' => Str::slug($competition),
             'country_id' => $this->country->id,
-            'user_id' => 1,
             'status' => 1,
         ]);
 
         $img = $this->saveCompetitionLogo($img);
 
-        Competition::find($this->competition->id)->update(['img' => $img]);
+        $this->repo->update($this->competition->id, ['img' => $img]);
     }
 
     function saveTeams(array $teams)
@@ -129,29 +133,17 @@ class CompetitionsController extends Controller
             ['name' => $name, 'url' => $url] = $team[1]['team'];
 
             $data = [
-                'uuid' => Str::orderedUuid(),
                 'name' => $name,
                 'slug' => Str::slug($name),
                 'url' => $url,
                 'competition_id' => $this->competition->id,
                 'country_id' => $this->country->id,
                 'img' => '',
-                'user_id' => 1,
                 'status' => 1,
                 "updated_at" => date('Y-m-d H:i:s'),
             ];
-            $querbuilder = DB::table('teams');
 
-            $team = $querbuilder->where(['name' => $name, 'country_id' => $this->country->id])->first();
-            if (!$team) {
-                $id = $querbuilder->insertGetId(array_merge($data, [
-                    "created_at" =>  date('Y-m-d H:i:s'),
-                ]));
-                $team = $querbuilder->where('id', $id)->first();
-            } else {
-                $querbuilder->where('id', $team->id)->update(array_merge($data, ['last_fetch' => date('Y-m-d H:i:s')]));
-                $team = $querbuilder->where('id', $team->id)->first();
-            }
+            $team = Team::updateOrCreate(['name' => $name, 'country_id' => $this->country->id], $data);
 
             $added[] = ['country' => $this->country->name, 'competition' => $this->competition->name, 'name' => '#' . $team->name . ' ' . $team->name];
         }
@@ -163,7 +155,7 @@ class CompetitionsController extends Controller
     {
 
         $ext = pathinfo($source, PATHINFO_EXTENSION);
-        $filename = str_repeat("c0", 3 - strlen($this->competition->id)) . $this->competition->id . '.' . $ext;
+        $filename = "c-" . $this->competition->id . '.' . $ext;
 
         $dest = "images/competitions/" . Str::slug($this->country->name); /* Path */
         if (!file_exists($dest)) {

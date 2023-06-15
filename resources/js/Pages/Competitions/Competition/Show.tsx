@@ -1,8 +1,8 @@
 import { Link, usePage } from "@inertiajs/inertia-react";
-import DefaultLayout from "../../../layout/DefaultLayout";
+import DefaultLayout from "@/layout/DefaultLayout";
 
 interface CountryInterface {
-    uuid: string,
+    id: string,
     name: string,
     slug: string,
     competitions: []
@@ -10,7 +10,7 @@ interface CountryInterface {
 }
 
 interface TeamInterface {
-    uuid: string,
+    id: string,
     name: string,
     slug: string,
 }
@@ -25,8 +25,8 @@ const Show = () => {
             <div>
                 {competition.name}
                 {competition.teams.map((team: TeamInterface) => (
-                    <div className="ml-4" key={team.uuid}>
-                        <Link href={`/teams/${team.uuid}`}>{team.name}</Link>
+                    <div className="ml-4" key={team.id}>
+                        <Link href={`/teams/team/${team.id}`}>{team.name}</Link>
                     </div>
                 ))}
 

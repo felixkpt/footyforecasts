@@ -2,10 +2,11 @@
 
 namespace App\Repositories;
 
-use App\Interfaces\EloquentRepositoryInterface;
 use App\Interfaces\IEloquentRepository;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+
 class EloquentRepository implements IEloquentRepository
 {
     /**
@@ -18,9 +19,12 @@ class EloquentRepository implements IEloquentRepository
      *
      * @param Model $model
      */
-    public function __construct(Model $model)
+    public function __construct($model = null)
     {
-        $this->model = $model;
+        if (is_string($model)) {
+            $this->model = new $model;
+        } else
+            $this->model = $model;
     }
 
     /**
@@ -40,9 +44,9 @@ class EloquentRepository implements IEloquentRepository
      * @param array $appends
      * @return Model
      */
-    public function findById(int $modelId, array $columns = ['*'], array $relations = [], array $appends = []): ?Model
+    public function findById($modelId, array|null $columns = ['*'], array $relations = [], array $appends = []): ?Model
     {
-        return $this->model->select($columns)->with($relations)->findOrFail($modelId)->append($appends);
+        return $this->model->select($columns)->with($relations)->where($this->model->getKeyName() . '', '=', $modelId)->firstOrFail()->append($appends);
     }
 
     /**
@@ -56,22 +60,35 @@ class EloquentRepository implements IEloquentRepository
     }
 
     /**
-     * @param int $modelId
+     * @param int|string $modelId
      * @param array $payload
      * @return bool
      */
-    public function update(int $modelId, array $payload): bool
+    public function update(int|string $modelId, array $payload): bool
     {
-        $model = $this->find($modelId);
-        return $model->update($payload);
+        return $this->model->where($this->model->getKeyName(), $modelId)->firstOrFail()->update($payload);
     }
 
     /**
-     * @param int $modelId
+     * Create or update a record matching the attributes, and fill it with values.
+     *
+     * @param  array  $attributes
+     * @param  array  $values
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function updateOrCreate(array $attributes, array $payload): Model
+    {
+
+        return $this->model->updateOrCreate($attributes, $payload);
+    }
+
+    /**
+     * @param int|string $modelId
      * @return bool
      */
-    public function deleteById(int $modelId): bool
+    public function deleteById(int|string $modelId): bool
     {
         return  $this->findById($modelId)->delete();
     }
-}
+
+    }
