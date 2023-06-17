@@ -9,7 +9,7 @@ use App\Models\Post;
 class PostRepository extends EloquentRepository implements IPostRepository
 {
     //@var Model
-    protected $model;
+    public $model;
 
     //BaseEloquentRepository constructor
     public function __construct(Post $model)

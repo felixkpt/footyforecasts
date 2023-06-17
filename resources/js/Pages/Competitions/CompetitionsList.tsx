@@ -9,7 +9,6 @@ interface CompetitionInterface {
     id: string,
     name: string,
     slug: string,
-
 }
 
 const CompetitionsList = ({ competitions }: CompetitionsInterface) => {

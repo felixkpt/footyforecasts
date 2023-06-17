@@ -15,9 +15,9 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->text('website')->nullable();
+            $table->string('website')->nullable();
             $table->string('img')->nullable();
-            $table->string('user_id');
+            $table->uuid('user_id');
             $table->string('status')->default('published');
             $table->timestamps();
         });

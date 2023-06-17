@@ -13,14 +13,21 @@ class Competition extends Model
         'name',
         'slug',
         'country_id',
+        'url',
         'img',
         'user_id',
         'status',
+        'is_domestic',
+        'last_fetch',
     ];
+
+    function country()
+    {
+      return $this->belongsTo(Country::class);
+    }
 
     function teams()
     {
-
       return $this->hasMany(Team::class);
     }
 

@@ -1,20 +1,25 @@
 <?php
 
-namespace Acme;
+namespace App\Services;
 
-use Symfony\Component\BrowserKit\AbstractBrowser;
-use Symfony\Component\BrowserKit\Response;
+use Symfony\Component\BrowserKit\HttpBrowser;
+use Symfony\Component\HttpClient\HttpClient;
 
-class Client extends AbstractBrowser
+class Client
 {
-    protected function doRequest($request)
+    /**
+     * Do a http request
+     * @param mixed $request
+     * @return mixed
+     */
+    static function request($request)
     {
-        // ... convert request into a response
+        $browser = new HttpBrowser(HttpClient::create());
 
-        $content = '';
-        $status = '';
-        $headers = '';
+        $browser->request('GET', $request);
 
-        return new Response($content, $status, $headers);
+        $html = $browser->getResponse()->getContent();
+
+        return $html;
     }
 }

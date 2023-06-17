@@ -17,6 +17,7 @@ class Team extends Model
         'competition_id',
         'country_id',
         'img',
+        'last_fetch',
         'user_id',
         'status',
     ];

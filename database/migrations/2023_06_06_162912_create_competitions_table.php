@@ -17,9 +17,13 @@ return new class extends Migration
             $table->string('slug');
             $table->string('icon')->nullable();
             $table->string('country_id');
+            $table->string('url')->nullable();
             $table->string('img')->nullable();
+            $table->integer('priority')->default(0);
             $table->string('status');
-            $table->string('user_id');
+            $table->boolean('is_domestic')->nullable();
+            $table->dateTime('last_fetch')->nullable();
+            $table->uuid('user_id');
             $table->timestamps();
         });
     }

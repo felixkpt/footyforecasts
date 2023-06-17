@@ -17,12 +17,13 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug');
             $table->string('url');
-            $table->string('competition_id');
+            $table->string('competition_id')->nullable();
             $table->string('country_id');
             $table->string('img')->nullable();
-            $table->string('user_id');
+            $table->uuid('user_id');
+            $table->integer('priority')->default(0);
             $table->string('status');
-            $table->dateTime('last_fetch')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->dateTime('last_fetch')->nullable();
             $table->timestamps();
         });
     }

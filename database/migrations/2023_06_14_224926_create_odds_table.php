@@ -27,7 +27,7 @@ return new class extends Migration
             $table->decimal('gg_odds', 6, 2, true)->nullable();
             $table->decimal('ng_odds', 6, 2, true)->nullable();
             $table->uuid('game_id')->nullable();
-            $table->string('user_id');
+            $table->uuid('user_id');
             $table->tinyInteger('status')->default(1);
             $table->timestamps();
         });

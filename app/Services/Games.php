@@ -3,20 +3,15 @@
 namespace App\Services;
 
 use App\Models\Game;
-use App\Models\Odd;
-use App\Models\Stadium;
-use App\Repositories\EloquentRepository;
 use App\Repositories\TeamRepository;
 use Illuminate\Support\Carbon;
 use Exception;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use LaracraftTech\LaravelDynamicModel\DynamicModelFactory;
-use Symfony\Component\BrowserKit\HttpBrowser;
+use App\Services\Client;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\HttpClient\HttpClient;
 
 class Games
 {
@@ -39,15 +34,15 @@ class Games
 
         $team = $this->repo->findById($team_id);
 
-        $source = env('SOURCE_SITE') . $team->url;
+        $last_fetch = Carbon::createFromDate($team->last_fetch);
+        $now = Carbon::now();
+        $testdate = $last_fetch->diffInDays($now);
 
-        $browser = new HttpBrowser(HttpClient::create());
+        if ($team->last_fetch !== null && $testdate < 1) return response(['type' => 'success', 'message' => 'Last fetch is less than 1 day.']);
 
-        $browser->request('GET', $source);
+        $source = Common::resolve($team->url);
 
-        $html = $browser->getResponse()->getContent();
-
-
+        $html = Client::request($source);
         $crawler = new Crawler($html);
 
         $source_team = $crawler->filter('div.moduletable>div.mptlt')->text();
@@ -55,7 +50,7 @@ class Games
 
         $games = $crawler->filter('div.moduletable>div.st_scrblock .st_rmain .st_row');
 
-        return $games->each(function (Crawler $node) {
+        $saved = $games->each(function (Crawler $node) {
 
             $date_time = $node->filter('.st_date');
             $date_month = preg_replace('#\/#', '-', $node->filter('.st_date>div:first-child')->text());
@@ -80,15 +75,17 @@ class Games
 
             return $this->saveGame($date_time, $home_team_url, $home_team, $ft_results, $ht_results, $away_team_url, $away_team, $url);
         });
+
+        $this->repo->update($team_id, ['last_fetch' => Carbon::now()]);
+
+        return $saved;
     }
-
-
 
     private function saveGame(mixed ...$args)
     {
         [$date_time, $home_team_url, $home_team, $ft_results, $ht_results, $away_team_url, $away_team, $url] = $args;
 
-        $table = Carbon::parse($date_time)->format('Y') . '_games';
+          $table = Carbon::parse($date_time)->format('Y') . '_games';
         $this->createTable($table);
 
         $date = Carbon::parse($date_time)->format('Y-m-d');
@@ -153,7 +150,7 @@ class Games
 
         $game = $this->gameModel($table);
 
-        $games = $game->where('fetching_fixture_state', 0)->where(fn ($q) => $q->where('home_team_id', $team_id)->orwhere('away_team_id', $team_id))->take(10)->get()->toArray();
+        $games = $game->where('fetching_fixture_state', 0)->where(fn ($q) => $q->where('home_team_id', $team_id)->orwhere('away_team_id', $team_id))->take(5)->get()->toArray();
 
         if (count($games) === 0) return response(['type' => 'fetching_fixture_state:0_passed', 'data' => 'All saved fixtures are upto date.']);
 
@@ -173,14 +170,7 @@ class Games
     function detailedFixture()
     {
 
-        $source = env('SOURCE_SITE') . $this->game['url'];
-
-        $browser = new HttpBrowser(HttpClient::create());
-
-        $browser->request('GET', $source);
-
-        $html = $browser->getResponse()->getContent();
-
+        $html = Client::request(Common::resolve($this->game['url']));
         $crawler = new Crawler($html);
 
         $header = $crawler->filter('div.predictioncontain');
@@ -253,10 +243,10 @@ class Games
     {
         [$home_team_logo, $date_time, $stadium, $competition, $competition_url, $away_team_logo, $ft_results, $ht_results, $one_x_two, $over_under, $gg_ng] = $args;
 
-        $this->saveTeamLogo($this->game['home_team_id'], $home_team_logo);
-        $this->saveTeamLogo($this->game['away_team_id'], $away_team_logo);
-        $stadium_id = $this->saveStadium($stadium);
-        $competition_id = $this->saveCompetition($competition, $competition_url,);
+        Common::saveTeamLogo($this->game['home_team_id'], $home_team_logo);
+        Common::saveTeamLogo($this->game['away_team_id'], $away_team_logo);
+        $stadium = Common::saveStadium($stadium);
+        $competition = Common::saveCompetition($competition_url, $competition);
 
         $table = Carbon::parse($date_time)->format('Y') . '_games';
         $this->createTable($table);
@@ -276,13 +266,18 @@ class Games
                 'time' => $time,
                 'ht_results' => $ht_results,
                 'ft_results' => $ft_results,
-                'competition_id' => $competition_id,
-                'stadium_id' => $stadium_id,
                 'fetching_fixture_state' => 1
             ];
+
+            if ($stadium)
+                $arr['stadium_id'] = $stadium->id;
+
+            if ($competition)
+                $arr['competition_id'] = $competition->id;
+
             $exists->update($arr);
 
-            $this->saveOdds($one_x_two, $over_under, $gg_ng);
+            Common::saveOdds($one_x_two, $over_under, $gg_ng, $this->game['id']);
 
             return 'Fixture updated';
         } else {
@@ -319,78 +314,5 @@ class Games
     private function gameModel($table)
     {
         return app(DynamicModelFactory::class)->create(Game::class, $table);
-    }
-
-    function saveTeamLogo($team_id, $source)
-    {
-        $exists = $this->repo->findById($team_id);
-        if ($exists->img) return true;
-
-        $ext = pathinfo($source, PATHINFO_EXTENSION);
-        $filename = "t" . $team_id . '.' . $ext;
-
-        $dest = ("images/teams"); /* Path */
-        File::ensureDirectoryExists(storage_path("app/public/" . $dest));
-
-        $dest .= '/' . $filename; /* Complete file name */
-
-        /* Copy the file */
-        copy($source, storage_path("app/public/" . $dest));
-
-        $this->repo->update($team_id, ['img' => $dest]);
-
-        return true;
-    }
-    function saveStadium($name)
-    {
-        $repo = new EloquentRepository(Stadium::class);
-
-        $res = $repo->updateOrCreate(['name' => $name], [
-            'name' => $name
-        ]);
-
-        return $res->id;
-    }
-
-    function saveOdds(...$args)
-    {
-
-        [$one_x_two, $over_under, $gg_ng] = $args;
-
-        if (count($one_x_two) !== 3) return false;
-
-        $repo = new EloquentRepository(Odd::class);
-
-        $res = $repo->updateOrCreate(['game_id' => $this->game['id']], [
-            'game_id' => $this->game['id'],
-            'home_win_odds' => $one_x_two[0],
-            'draw_odds' => $one_x_two[1],
-            'away_win_odds' => $one_x_two[2],
-            'over_odds' => $over_under[0] ?? null,
-            'under_odds' => $over_under[1] ?? null,
-            'gg_odds' => $gg_ng[0] ?? null,
-            'ng_odds' => $gg_ng[1] ?? null,
-
-        ]);
-    }
-
-    function saveCompetition($source, $name)
-    {
-
-        return null;
-
-        $ext = pathinfo($source, PATHINFO_EXTENSION);
-        $filename = "c" . $this->competition->id . '.' . $ext;
-
-        $dest = "images/competitions/" . Str::slug($this->country->name); /* Path */
-        if (!file_exists($dest)) {
-            mkdir($dest, 0777, true); /* Create directory */
-        }
-        $dest .= '/' . $filename; /* Complete file name */
-
-        /* Copy the file */
-        copy($source, $dest);
-
-        return $dest;
     }
 }

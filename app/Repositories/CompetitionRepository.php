@@ -7,12 +7,12 @@ use App\Models\Competition;
 class CompetitionRepository extends EloquentRepository implements ICompetitionRepository
 {
     //@var Model
-    protected $model;
+    public $model;
 
     //BaseEloquentRepository constructor
-    public function __construct(Competition $model)
+    public function __construct()
     {
-        $this->model = $model;
+        $this->model = new Competition();
     }
 
  }

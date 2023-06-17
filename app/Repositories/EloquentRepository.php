@@ -12,7 +12,7 @@ class EloquentRepository implements IEloquentRepository
     /**
      * @var Model
      */
-    protected $model;
+    public $model;
 
     /**
      * BaseEloquentRepository constructor.
