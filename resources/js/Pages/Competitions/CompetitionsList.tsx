@@ -17,7 +17,7 @@ const CompetitionsList = ({ competitions }: CompetitionsInterface) => {
             <div>
                 {competitions.map((competition: CompetitionInterface) => (
                     <div key={competition.id}>
-                        <Link href={`/competitions/${competition.id}`}>{competition.name}</Link>
+                        <Link href={`/competitions/competition/${competition.id}`}>{competition.name}</Link>
                     </div>
                 ))}
             </div>

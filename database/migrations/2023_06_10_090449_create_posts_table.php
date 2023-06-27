@@ -18,7 +18,7 @@ return new class extends Migration
             $table->longText('content');
             $table->string('img')->nullable();
             $table->integer('priority')->default(0);
-            $table->string('status');
+            $table->tinyInteger('status')->default(1);
             $table->uuid('user_id');
             $table->timestamps();
         });

@@ -18,6 +18,7 @@ class Team extends Model
         'country_id',
         'img',
         'last_fetch',
+        'last_detailed_fetch',
         'user_id',
         'status',
     ];

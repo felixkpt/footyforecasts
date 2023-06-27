@@ -22,8 +22,9 @@ return new class extends Migration
             $table->string('img')->nullable();
             $table->uuid('user_id');
             $table->integer('priority')->default(0);
-            $table->string('status');
+            $table->tinyInteger('status')->default(1);
             $table->dateTime('last_fetch')->nullable();
+            $table->dateTime('last_detailed_fetch')->nullable();
             $table->timestamps();
         });
     }

@@ -7,7 +7,7 @@ import showValidationErrors from './show-validation-errors'
 const request = axios.create({
     baseURL: '', // url = base url + request url
     // withCredentials: true, // send cookies when cross-domain requests
-    timeout: 20000 // request timeout
+    timeout: 10 * (1000 * 60) // request timeout
 })
 
 

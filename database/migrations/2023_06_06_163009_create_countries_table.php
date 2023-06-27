@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug');
             $table->string('code')->nullable();
+            $table->boolean('has_competitions')->default(0);
+            $table->string('phone_extension')->nullable();
             $table->string('img')->nullable();
             $table->integer('priority')->default(0);
             $table->tinyInteger('status')->default(1);

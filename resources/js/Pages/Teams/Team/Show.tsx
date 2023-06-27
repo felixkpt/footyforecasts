@@ -1,20 +1,50 @@
 import { Link, usePage } from "@inertiajs/inertia-react";
 import DefaultLayout from "../../../layout/DefaultLayout";
+import Nav from "./components/Nav";
+import { useEffect, useState } from "react";
 
+interface GameInterface {
+    id: string;
+    competition_abbreviation: string;
+    slug: string;
+    last_fetch: string
+    action: string;
+    fetching_fixture_state: number;
+}
+
+interface TeamInterface {
+    id: string;
+    name: string;
+    slug: string;
+    games: GameInterface[]
+}
 const Show = () => {
 
     const { props } = usePage<any>();
-    const { team } = props
+
+    const [team, setTeam] = useState<TeamInterface>()
+
+    useEffect(() => {
+        let { team: tmp } = props
+
+        setTeam(tmp)
+
+    }, [props.team])
+
     return (
         <DefaultLayout>
-            {team &&
-                <div className="flex justify-between w-full">
-                    <div className="ml-4">
-                        {team.name}
+            <div>
+                <Nav title="Games" team={team} setTeam={setTeam} />
+                {team?.games &&
+                    <div>
+                        {team.games.map((game) =>
+                            <div key={game.id}>
+                                aaaaa
+                            </div>
+                        )}
                     </div>
-                    <div><Link href={`/teams/team/${team.id}/actions`}>Team Actions</Link></div>
-                </div>
-            }
+                }
+            </div>
         </DefaultLayout>
     );
 };

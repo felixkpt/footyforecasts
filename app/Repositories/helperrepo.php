@@ -1,6 +1,7 @@
 <?php
 
-use Illuminate\Support\Str;
+use App\Models\Game;
+use LaracraftTech\LaravelDynamicModel\DynamicModelFactory;
 
 if (!function_exists('defaultColumns')) {
 
@@ -29,4 +30,10 @@ if (!function_exists('defaultColumns')) {
 
         return $res->withHeaders($headers);
     }
+
+    function gameModel($table)
+    {
+        return app(DynamicModelFactory::class)->create(Game::class, $table);
+    }
+
 }

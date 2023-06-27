@@ -6,10 +6,14 @@
     <meta name="viewport"
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    @vite('resources/ts/app.tsx')
     <style>
+        body {
+            font-family: sans-serif;
+            font-size: 14px;
+        }
+
         p {
-            font-size: 12px;
+            font-size: 14px;
         }
 
         .signature {
@@ -37,9 +41,10 @@
                     class="text-blue-600 hover:underline dark:text-blue-400">manage your email preferences</a>.
             </p>
 
-            <p class="mt-3 text-gray-500 dark:text-gray-400">© {{ date('Y').' '. config('app.name') }}. All Rights
+            <p class="mt-3 text-gray-500 dark:text-gray-400">© {{ date('Y') . ' ' . config('app.name') }}. All Rights
                 Reserved.</p>
         </footer>
     </section>
 </body>
+
 </html>

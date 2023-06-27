@@ -35,7 +35,7 @@ const Create = () => {
                                     <option value="changeStatus">Team Disable</option>
                                 </select>
                             </div>
-                            <button className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray">Save</button>
+                            <button className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray">Action</button>
                         </div>
                     </form>
                 </div>

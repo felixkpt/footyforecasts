@@ -13,11 +13,12 @@ return new class extends Migration
     {
         Schema::create('odds', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->dateTime('date_time')->nullable();
-            $table->date('date')->nullable();
+            $table->dateTime('date_time');
+            $table->date('date');
             $table->time('time')->nullable();
             $table->string('home_team')->nullable();
             $table->string('away_team')->nullable();
+            $table->uuid('competition_id')->nullable();
             $table->string('source')->nullable();
             $table->decimal('home_win_odds', 6, 2, true)->nullable();
             $table->decimal('draw_odds', 6, 2, true)->nullable();

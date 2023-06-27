@@ -9,13 +9,10 @@ use App\Services\Client;
 use App\Services\Common;
 use Inertia\Inertia;
 use Symfony\Component\DomCrawler\Crawler;
+use Illuminate\Support\Str;
 
 class CompetitionsController extends Controller
 {
-    protected $country;
-    protected $competition;
-    protected $is_domestic = false;
-
     private $repo;
 
     public function __construct(CompetitionRepository $repo)
@@ -25,14 +22,8 @@ class CompetitionsController extends Controller
 
     function index()
     {
-        $countries = Country::with('competitions:id,country_id,name,img')->get()->toArray();
+        $countries = Country::where('has_competitions', true)->with('competitions:id,country_id,name,img')->get()->toArray();
         return Inertia::render('Competitions/Index', compact('countries'));
-    }
-
-    function show($id)
-    {
-        $competition = $this->repo->findById($id, ['*'], ['teams'])->toArray();
-        return Inertia::render('Competitions/Competition/Show', compact('competition'));
     }
 
     function create()
@@ -47,14 +38,24 @@ class CompetitionsController extends Controller
         ]);
 
         $source = request()->source;
+        $is_domestic = request()->is_domestic;
 
-        $is_domestic = false;
-        if (preg_match('#/standing#', $source))
-            $is_domestic = true;
-        
+        if ($is_domestic) {
+            $source = rtrim($source, '/');
+            if (!Str::endsWith($source, '/standing'))
+                $source .= '/standing';
+        }
+
         $source = parse_url($source);
 
-        $source =  $source['path'];
+        $source = $source['path'];
+
+        $exists = $this->repo->model->where('url', $source)->first();
+        if ($exists)
+            return respond(['data' => ['message' => 'Whoops! It seems the competition is already saved (#' . $exists->id . ').']]);
+
+        if (!Country::count())
+            return respond(['data' => ['message' => 'Countries list is empty.']]);
 
         $country = Common::saveCountry($source);
 
@@ -62,11 +63,14 @@ class CompetitionsController extends Controller
 
         $crawler = new Crawler($html);
 
-        $competition = $crawler->filter('h1.frontH')->each(fn (Crawler $node) => ['src' => $source, 'name' => $node->text(), 'img' => $node->filter('img')->attr('src')]);
+        $competition = $crawler->filter('h1.frontH')->each(fn(Crawler $node) => ['src' => $source, 'name' => $node->text(), 'img' => $node->filter('img')->attr('src')]);
         $competition = $competition[0] ?? null;
 
-        $competition = Common::saveCompetition($competition, null);
+        $competition = Common::saveCompetition($competition, null, $is_domestic);
 
-        return Common::updateOrCreateCompetition($competition, $country, $is_domestic, null);
+        if ($competition)
+            return Common::updateCompetitionAndHandleTeams($competition, $country, $is_domestic, null, false);
+        else
+            return respond(['data' => ['message' => 'Cannot get competition.']]);
     }
 }

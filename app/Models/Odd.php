@@ -16,8 +16,12 @@ class Odd extends Model
     }
 
     protected $fillable = [
+        'date_time',
+        'date',
+        'time',
         'home_team',
         'away_team',
+        'competition_id',
         'source',
         'home_win_odds',
         'draw_odds',

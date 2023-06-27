@@ -2,8 +2,8 @@
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
-            "@/utils*": [
-                "./resources/js/utils*"
+            "@/*": [
+                "./resources/js/*"
             ]
         }
     }

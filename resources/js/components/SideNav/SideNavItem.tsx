@@ -26,8 +26,8 @@ export default function SidebarItem({ item, path }: SidebarItemInterface | Sideb
 
     if (item.children) {
         return (
-            <div className={open ? "sidebar-item open" : "sidebar-item"}>
-                <div className="sidebar-title cursor-default" onClick={() => setOpen(!open)}>
+            <div className={open ? "sidebar-item open" : "sidebar-item"} onClick={() => setOpen(!open)}>
+                <div className="sidebar-title cursor-default">
                     <span>
                         {item.icon && <span className="mr-1"><Icon icon={item.icon} /></span>}
                         {item.title}

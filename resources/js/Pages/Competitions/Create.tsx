@@ -1,6 +1,7 @@
 import { useState } from "react";
 import DefaultLayout from "../../layout/DefaultLayout";
-import axios from "axios";
+import Checkbox from "@/components/Checkbox";
+import request from "@/utils/request";
 
 interface Team {
     id: string
@@ -22,14 +23,15 @@ interface Res {
 const Create = () => {
 
     const [source, setSource] = useState('')
+    const [is_domestic, setIsDomestic] = useState(true)
 
     const [res, setRes] = useState<Res>()
     const [message, setMessage] = useState('')
 
     const handleSubmit = (e: any) => {
         e.preventDefault()
-        axios.post('/competitions', { source }).then(function (resp) {
-            const { data } = resp.data
+        request.post('/competitions', { source, is_domestic }).then(function (resp) {
+            const { data } = resp
 
             if (data?.message)
                 setMessage(data.message)
@@ -54,6 +56,9 @@ const Create = () => {
                                 <div className="mb-4.5">
                                     <label className="mb-2.5 block text-black dark:text-white">Competition url</label>
                                     <input value={source} onChange={(e) => setSource(e.target.value)} name="url" type="text" placeholder="Enter Competition url" className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary" />
+                                </div>
+                                <div className="mb-4.5">
+                                    <Checkbox checked={is_domestic} message="Is Domestic?" onChange={(v: boolean) => setIsDomestic(v)} />
                                 </div>
                                 <button className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray">Fetch!</button>
                             </div>

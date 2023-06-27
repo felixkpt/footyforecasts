@@ -16,6 +16,7 @@ class Country extends Model
         'code',
         'user_id',
         'status',
+        'has_competitions'
     ];
 
     function competitions()

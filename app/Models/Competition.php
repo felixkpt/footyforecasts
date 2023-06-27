@@ -12,13 +12,15 @@ class Competition extends Model
     protected $fillable = [
         'name',
         'slug',
+        'abbreviation',
         'country_id',
         'url',
         'img',
+        'last_fetch',
+        'last_detailed_fetch',
         'user_id',
         'status',
         'is_domestic',
-        'last_fetch',
     ];
 
     function country()
