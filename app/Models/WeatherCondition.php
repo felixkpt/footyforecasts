@@ -6,13 +6,15 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Stadium extends Model
+class WeatherCondition extends Model
 {
     use HasFactory, HasUlids;
+
     protected $fillable = [
         'name',
-        'location',
-        'team_id',
+        'slug',
+        'img',
+        'source_img',
         'user_id',
         'status',
     ];

@@ -6,6 +6,7 @@ use App\Models\Competition;
 use App\Models\CompetitionAbbreviation;
 use App\Repositories\EloquentRepository;
 use App\Services\Common;
+use App\Services\Odds;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,7 @@ trait DBActions
     {
         [$date_time, $home_team_url, $home_team, $ft_results, $ht_results, $away_team_url, $away_team, $url, $competition_abbreviation] = $args;
 
-        $table = Carbon::parse($date_time)->format('Y') . '_games';
+        $table = Carbon::parse($date_time)->timezone('GMT')->format('Y') . '_games';
         $this->createTable($table);
 
         $date = Carbon::parse($date_time)->format('Y-m-d');
@@ -86,13 +87,14 @@ trait DBActions
         Common::saveTeamLogo($this->game['home_team_id'], $data['home_team_logo']);
         Common::saveTeamLogo($this->game['away_team_id'], $data['away_team_logo']);
         $stadium = Common::saveStadium($data['stadium']);
+        $weather_condition = Common::saveWeatherCondition($data['weather_condition']);
 
         if ($this->existing_competition && $this->game['competition_id'] == $this->existing_competition->id)
             $competition = $this->existing_competition;
         else
             $competition = Common::saveCompetition($data['competition_url'], $data['competition']);
 
-        $table = Carbon::parse($data['date_time'])->format('Y') . '_games';
+        $table = Carbon::parse($data['date_time'])->timezone('GMT')->format('Y') . '_games';
         $this->createTable($table);
 
         $date = Carbon::parse($data['date_time'])->format('Y-m-d');
@@ -110,11 +112,15 @@ trait DBActions
                 'time' => $time,
                 'ht_results' => $data['ht_results'],
                 'ft_results' => $data['ft_results'],
-                'update_status' => 1
+                'update_status' => 1,
+                'temperature' => $data['temperature'],
             ];
 
             if ($stadium)
                 $arr['stadium_id'] = $stadium->id;
+
+            if ($weather_condition)
+                $arr['weather_condition_id'] = $weather_condition->id;
 
             $msg = 'Fixture updated';
 
@@ -134,7 +140,7 @@ trait DBActions
 
             $exists->update($arr);
 
-            Common::saveOdds([
+            Odds::save([
                 'date_time' => $data['date_time'],
                 'date' => $date,
                 'time' => $time,
@@ -215,12 +221,14 @@ trait DBActions
                 $table->string('ft_results')->nullable();
                 $table->string('competition_abbreviation')->nullable();
                 $table->uuid('competition_id')->nullable();
-                $table->string('url')->nullable();
-                $table->uuid('stadium_id')->nullable();
-                $table->uuid('user_id');
-                $table->boolean('status')->default(1);
                 $table->tinyInteger('update_status')->default(0);
                 $table->tinyInteger('update_failed_attempts')->default(0);
+                $table->string('url')->nullable();
+                $table->uuid('stadium_id')->nullable();
+                $table->string('temperature')->nullable();
+                $table->uuid('weather_condition_id')->nullable();
+                $table->uuid('user_id');
+                $table->boolean('status')->default(1);
                 $table->timestamps();
             });
         }

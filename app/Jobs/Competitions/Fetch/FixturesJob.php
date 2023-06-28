@@ -26,16 +26,16 @@ class FixturesJob implements ShouldQueue, FixturesInterface
     protected $script_max_duration = 5;
     protected $start;
     protected $stop;
-    protected $last_fetch_minutes = 1;
-    protected $last_fetch_minutes_teams = 4;
+    protected $last_fetch_minutes = 5;
+    protected $last_fetch_minutes_teams = 10;
     private $repo;
     private $teamRepo;
     protected $mailUpdates = [];
     protected $last_fetch_col = 'last_fetch';
     protected $chunk = 3;
     protected $limit = 15;
-    protected $chunk_teams = 2;
-    protected $limit_teams = 6;
+    protected $chunk_teams = 3;
+    protected $limit_teams = 9;
 
     /**
      * Create a new job instance.

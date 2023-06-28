@@ -11,16 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stadia', function (Blueprint $table) {
+        Schema::create('weather_conditions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
-            $table->string('location')->nullable();
-            $table->text('description')->nullable();
-            $table->string('website')->nullable();
+            $table->string('slug');
             $table->string('img')->nullable();
-            $table->uuid('team_id')->nullable();
+            $table->string('source_img');
             $table->uuid('user_id');
-            $table->string('status')->default('published');
+            $table->boolean('status')->default(1);
             $table->timestamps();
         });
     }
@@ -30,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('stadia');
+        Schema::dropIfExists('weather_conditions');
     }
 };

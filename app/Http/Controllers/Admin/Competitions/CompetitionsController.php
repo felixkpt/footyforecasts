@@ -50,6 +50,14 @@ class CompetitionsController extends Controller
 
         $source = $source['path'];
 
+        $suff = '/standing';
+        if (Str::endsWith($source, $suff)) {
+            $source = Str::beforeLast($source, $suff);
+        } else {
+            if (Client::status(Common::resolve($source . $suff)) === 200)
+                array_push($arr, ['is_domestic' => true]);
+        }
+        
         $exists = $this->repo->model->where('url', $source)->first();
         if ($exists)
             return respond(['data' => ['message' => 'Whoops! It seems the competition is already saved (#' . $exists->id . ').']]);

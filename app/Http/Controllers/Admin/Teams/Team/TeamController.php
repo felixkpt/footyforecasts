@@ -96,7 +96,6 @@ class TeamController extends Controller
 
         Common::checkCompetitionAbbreviation($table);
 
-
         $games = new Games();
 
         $team = $this->repo->findById($id);

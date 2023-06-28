@@ -6,6 +6,7 @@ use App\Models\CompetitionAbbreviation;
 use App\Models\Country;
 use App\Models\Odd;
 use App\Models\Stadium;
+use App\Models\WeatherCondition;
 use App\Repositories\CompetitionRepository;
 use App\Repositories\EloquentRepository;
 use App\Repositories\TeamRepository;
@@ -146,12 +147,6 @@ class Common
             'is_domestic' => $is_domestic
         ];
 
-        $suff = '/standing';
-        if (!Str::endsWith($source, $suff) && Client::status(Common::resolve($source . $suff)) === 200) {
-            $source = $source . $suff;
-            array_push($arr, ['is_domestic' => true]);
-        }
-
         $competition = tap(self::competitionRepo()->model->updateOrCreate(
             [
                 'name' => $name,
@@ -214,46 +209,42 @@ class Common
         return $country;
     }
 
-    static function saveStadium($name)
+    static function saveStadium($name, $location = null, $team_id = null)
     {
+        if (strlen($name) < 1)
+            return null;
+
         $repo = new EloquentRepository(Stadium::class);
 
-        $res = $repo->updateOrCreate(['name' => $name], [
-            'name' => $name
-        ]);
+        $arr = [
+            'name' => $name,
+            'location' => $location,
+            'team_id' => $team_id,
+        ];
+
+        $res = $repo->updateOrCreate($arr, $arr);
 
         return $res;
     }
 
-    static function saveOdds($data)
+    static function saveWeatherCondition($source_img)
     {
+        if (strlen($source_img) < 1)
+            return null;
 
-        if (count($data['one_x_two']) !== 3)
-            return false;
+        $repo = new EloquentRepository(WeatherCondition::class);
 
-        $repo = new EloquentRepository(Odd::class);
+        $res = $repo->model->where('source_img', $source_img)->first();
 
-        try {
-            $repo->updateOrCreate(['home_team' => $data['home_team'], 'away_team' => $data['away_team'], 'date' => $data['date'],], [
-                'date_time' => $data['date_time'],
-                'date' => $data['date'],
-                'time' => $data['time'],
-                'home_team' => $data['home_team'],
-                'away_team' => $data['away_team'],
-                'home_win_odds' => $data['one_x_two'][0],
-                'draw_odds' => $data['one_x_two'][1],
-                'away_win_odds' => $data['one_x_two'][2],
-                'over_odds' => $data['over_under'][0] ?? null,
-                'under_odds' => $data['over_under'][1] ?? null,
-                'gg_odds' => $data['gg_ng'][0] ?? null,
-                'ng_odds' => $data['gg_ng'][1] ?? null,
-                'game_id' => $data['game_id'] ?? null,
-                'competition_id' => $data['competition_id'] ?? null,
-                'source' => $data['source'] ?? null,
+        if (!$res) {
+            $res = $repo->create([
+                'name' => Str::title($source_img),
+                'slug' => Str::slug($source_img),
+                'source_img' => $source_img
             ]);
-        } catch (Exception $e) {
-            Log::info('Odds save failed:', ['err' => $e->getMessage(), 'data' => $data]);
         }
+
+        return $res;
     }
 
     static function saveTeams(...$args)

@@ -50,16 +50,23 @@ class DetailedFixturesJob implements ShouldQueue, FixturesInterface
         $this->repo = new CompetitionRepository();
         $this->teamRepo = new TeamRepository();
 
-        $this->games_table = Carbon::now()->subYears(rand(2, 2))->year . '_games';
 
-        // dd($this->games_table);
-        // $l = new Games();
-        // $gameModel = gameModel($this->games_table);
+        $i = 0;
+        while (True) {
+            $y = Carbon::now()->subYears(rand(abs($i), abs($i)))->year . '_games';
+            try {
+                $gameModel = gameModel($y);
+            } catch (Exception $e) {
+                break;
+            }
 
-        // $g = $gameModel->find('01h3r7yg27bht9qf73aczk0xyq');
+            if ($gameModel->whereNotNull('url')->where('update_status', 0)->count() > 0) {
+                $this->games_table = $y;
+                break;
+            }
+            $i--;
+        }
 
-        // $l->doDetailedFixture($g);
-        // dd('end');
     }
 
     /**
@@ -68,7 +75,10 @@ class DetailedFixturesJob implements ShouldQueue, FixturesInterface
     public function handle(): void
     {
 
-        $duration = $this->commonHandle();
+        $duration = 0;
+        if ($this->games_table)
+            $duration = $this->commonHandle();
+
         $message = count($this->mailUpdates) . " detailed competitions fixtures finished in $duration.\n";
         echo $message;
 

@@ -33,6 +33,7 @@ trait Source1
 
 		$source = Common::resolve($team->url);
 		$html = Client::request($source);
+
 		$crawler = new Crawler($html);
 
 		$source_team = $crawler->filter('div.moduletable>div.mptlt')->text();
@@ -40,6 +41,20 @@ trait Source1
 			return ['type' => 'error', 'message' => 'Error: team mis-match!'];
 
 		$table = $crawler->filter('div.moduletable>div.st_scrblock .st_rmain')->first();
+
+		$stadium = $location = null;
+		$st = $crawler->filter('ul.team_data_ul li[itemprop="location"]');
+		if ($st->count() === 1) {
+			$parts = explode(', ', $st->text());
+
+			$stadium = trim(preg_replace('#Location: #i', '', $parts[0]));
+			if (count($parts) == 2) {
+				$location = trim($parts[1]);
+			}
+
+		}
+
+		Common::saveStadium($stadium, $location, $team->id);
 
 		return $this->saveGames($table);
 	}
@@ -69,18 +84,42 @@ trait Source1
 		if ($l->count() === 0)
 			return;
 
-		$date_time = $l->text();
+		$dt_raw = preg_replace('#\/#', '-', $l->text());
 
-		$d = explode(' ', $date_time, 2);
-		$date = Carbon::parse(preg_replace('#\/#', '-', $d[0]))->format('Y-m-d');
-		$date_time = Carbon::parse($date)->format('Y-m-d H:i');
-		if (count($d) == 2)
-			$date_time = Carbon::parse($date . ' ' . $d[1])->format('Y-m-d H:i');
+		$date_time = Carbon::parse($dt_raw)->timezone('GMT')->format('Y-m-d H:i');
 
-		$l = $header->filter('div.weather_main_pr span');
+		$l = $header->filter('div.weather_main_pr div span');
 		$stadium = null;
 		if ($l->count() === 1)
 			$stadium = $l->text();
+
+		$temperatureElement = explode(', ', $header->filter('.weather_main_pr')->text());
+
+		$temperature = null;
+		if (count($temperatureElement) > 1) {
+			$temperatureElement = end($temperatureElement);
+
+			// Check if the temperature element contains a temperature range
+			if (strpos($temperatureElement, ' - ') !== false) {
+				preg_match_all('/(\d+)°/', $temperatureElement, $matches);
+				if (count($matches[1]) >= 2) {
+					$temperatures = $matches[1];
+				}
+			} else {
+				// Extract the single temperature from the element
+				preg_match('/(\d+)°/', $temperatureElement, $matches);
+				if (count($matches) > 1) {
+					$temperatures = [$matches[1]];
+				}
+			}
+
+			$temperature = implode(' - ', array_map('intval', $temperatures));
+		}
+
+		$wc = $header->filter('.weather_main_pr img.wthc');
+		$weather_condition = null;
+		if ($wc->count() === 1)
+			$weather_condition = $wc->attr('src');
 
 		$competition = $crawler->filter('center.leagpredlnk a');
 		$competition_url = $competition->attr('href');
@@ -146,7 +185,11 @@ trait Source1
 			'ht_results' => $ht_results,
 			'one_x_two' => $one_x_two,
 			'over_under' => $over_under,
-			'gg_ng' => $gg_ng
+			'gg_ng' => $gg_ng,
+
+			'temperature' => $temperature,
+			'weather_condition' => $weather_condition,
+
 		];
 
 		$this->updateGame($data);
@@ -156,7 +199,6 @@ trait Source1
 
 	function saveGames($table)
 	{
-
 		$saved = [];
 		$table->filter('.st_row')->each(function (Crawler $node) use (&$saved) {
 
