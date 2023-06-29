@@ -13,8 +13,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
-        $schedule->command('competitions.fetch:fixtures')->everyTenMinutes()->withoutOverlapping();
-        $schedule->command('competitions.fetch:detailedfixtures')->everyFiveMinutes();
+        $schedule->command('competitions.fetch:detailedfixtures')->everyFiveMinutes()->withoutOverlapping();
+        // $schedule->command('competitions.fetch:fixtures')->everyFiveMinutes()->withoutOverlapping();
         // $schedule->command('competitions.fetch:fixtures')->everyMinute()->withoutOverlapping();
     }
 

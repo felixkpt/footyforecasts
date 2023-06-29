@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Repositories\TeamRepository;
 use App\Services\Common;
 use App\Services\Games\Games;
+use Exception;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class TeamController extends Controller
@@ -18,10 +20,59 @@ class TeamController extends Controller
         $this->repo = $repo;
     }
 
+    function q($id, $i = 0)
+    {
+        $y = Carbon::now()->subYears($i)->year . '_games';
+        try {
+            $gameModel = gameModel($y);
+        } catch (Exception $e) {
+            return false;
+        }
+
+        $table = $gameModel->getTable();
+
+        $games = DB::table($table)
+            ->join('teams as hteam', $table . '.home_team_id', 'hteam.id', )
+            ->join('teams as ateam', $table . '.away_team_id', 'ateam.id', )
+            ->where(function ($q) use ($table, $id) {
+                $q->where($table . '.home_team_id', $id)->orWhere($table . '.away_team_id', $id);
+            })
+            ->select(
+                $table . '.*',
+                'hteam.name as home_team',
+                'ateam.name as away_team'
+            );
+
+        return $games;
+    }
     function show($id)
     {
         $team = $this->repo->findById($id);
-        return Inertia::render('Teams/Team/Show', compact('team'));
+
+
+        $combinedQuery = DB::query()->fromSub($this->q($id, 0), 'subquery');
+
+        $max_past_years = 4;
+        $i = 0;
+        while ($combinedQuery->count() < 100 && $i < $max_past_years) {
+            $i++;
+
+            $games = $this->q($id, $i);
+            if ($games === false)
+                break;
+            $combinedQuery->when($games, fn($q) => $q->unionAll(DB::query()->fromSub($games, 'subquery')));
+
+        }
+
+        $games = DB::query()->fromSub($combinedQuery, 'result')
+            ->orderby('date_time', 'desc')->paginate(5);
+
+        // foreach ($results as $res) {
+        //     echo "$res->date_time $res->home_team vs $res->away_team ($res->ht_results) ($res->ft_results)<br>";
+        // }
+        // dd('');
+
+        return Inertia::render('Teams/Team/Show', compact('team', 'games'));
     }
 
     function checkMatches($id)
@@ -44,7 +95,7 @@ class TeamController extends Controller
     protected function fixtures($id)
     {
         $team = $this->repo->findById($id);
- 
+
         $games = new Games();
         $games = $games->getGames($id, true);
         $team = array_merge($team->toArray(), $games);

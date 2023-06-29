@@ -86,7 +86,12 @@ trait Source1
 
 		$dt_raw = preg_replace('#\/#', '-', $l->text());
 
-		$date_time = Carbon::parse($dt_raw)->timezone('GMT')->format('Y-m-d H:i');
+		$has_time = false;
+		if (Str::endsWith($dt_raw, 'GMT')) {
+			$date_time = Carbon::parse($dt_raw)->addMinutes(0)->format('Y-m-d H:i:s');
+			$has_time = true;
+		} else
+			$date_time = Carbon::parse($dt_raw)->format('Y-m-d H:i:s');
 
 		$l = $header->filter('div.weather_main_pr div span');
 		$stadium = null;
@@ -99,6 +104,7 @@ trait Source1
 		if (count($temperatureElement) > 1) {
 			$temperatureElement = end($temperatureElement);
 
+			$temperatures = [];
 			// Check if the temperature element contains a temperature range
 			if (strpos($temperatureElement, ' - ') !== false) {
 				preg_match_all('/(\d+)°/', $temperatureElement, $matches);
@@ -113,7 +119,8 @@ trait Source1
 				}
 			}
 
-			$temperature = implode(' - ', array_map('intval', $temperatures));
+			if ($temperatures)
+				$temperature = implode(' - ', array_map('intval', $temperatures));
 		}
 
 		$wc = $header->filter('.weather_main_pr img.wthc');
@@ -177,6 +184,7 @@ trait Source1
 		$data = [
 			'home_team_logo' => $home_team_logo,
 			'date_time' => $date_time,
+			'has_time' => $has_time,
 			'stadium' => $stadium,
 			'competition' => $competition,
 			'competition_url' => $competition_url,
@@ -192,8 +200,6 @@ trait Source1
 
 		];
 
-		$this->updateGame($data);
-
 		return ['game_details' => $this->updateGame($data), 'game_h2h' => $saved];
 	}
 
@@ -205,7 +211,7 @@ trait Source1
 			$date_time = $node->filter('.st_date');
 			$date_month = preg_replace('#\/#', '-', $node->filter('.st_date>div:first-child')->text());
 			$year = $node->filter('.st_date>div:last-child')->text();
-			$date_time = Carbon::parse($date_month . '-' . $year)->format('Y-m-d');
+			$date_time = Carbon::parse($date_month . '-' . $year)->format('Y-m-d H:i:s');
 
 			$hteam = $node->filter('.st_hteam a');
 			$home_team_url = $hteam->attr('href');

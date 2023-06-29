@@ -5,6 +5,7 @@ namespace App\Services;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
@@ -16,16 +17,19 @@ class Odds
         if (count($data['one_x_two']) !== 3)
             return false;
 
-        $table = Carbon::parse($data['date_time'])->timezone('GMT')->format('Y') . '_odds';
+        $table = Carbon::parse($data['date_time'])->format('Y') . '_odds';
         self::createTable($table);
 
         $odds = gameModel($table);
 
         try {
+            DB::beginTransaction();
+
             $odds->updateOrCreate(['home_team' => $data['home_team'], 'away_team' => $data['away_team'], 'date' => $data['date'], 'game_id' => $data['game_id'] ?? null], [
                 'date_time' => $data['date_time'],
                 'date' => $data['date'],
                 'time' => $data['time'],
+                'has_time' => $data['has_time'],
                 'home_team' => $data['home_team'],
                 'away_team' => $data['away_team'],
                 'home_win_odds' => $data['one_x_two'][0],
@@ -39,10 +43,23 @@ class Odds
                 'competition_id' => $data['competition_id'] ?? null,
                 'source' => $data['source'] ?? null,
             ]);
+
+            DB::commit();
         } catch (Exception $e) {
+            DB::rollBack();
             Log::info('Odds save failed:', ['err' => $e->getMessage(), 'data' => $data]);
         }
+
     }
+
+    static function whereGame($game)
+    {
+
+        $table = str_replace('games', 'odds', $game['table']);
+        return gameModel($table)->where('game_id', $game['id']);
+    }
+
+
     private static function createTable($table)
     {
         if (!Schema::hasTable($table)) {
@@ -51,6 +68,7 @@ class Odds
                 $table->dateTime('date_time');
                 $table->date('date');
                 $table->time('time')->nullable();
+                $table->boolean('has_time')->default(0);
                 $table->string('home_team')->nullable();
                 $table->string('away_team')->nullable();
                 $table->uuid('competition_id')->nullable();

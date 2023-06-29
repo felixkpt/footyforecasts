@@ -7,10 +7,12 @@ use App\Models\CompetitionAbbreviation;
 use App\Repositories\EloquentRepository;
 use App\Services\Common;
 use App\Services\Odds;
+use Exception;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 
 trait DBActions
 {
@@ -18,7 +20,8 @@ trait DBActions
     {
         [$date_time, $home_team_url, $home_team, $ft_results, $ht_results, $away_team_url, $away_team, $url, $competition_abbreviation] = $args;
 
-        $table = Carbon::parse($date_time)->timezone('GMT')->format('Y') . '_games';
+        $table = Carbon::parse($date_time)->format('Y') . '_games';
+
         $this->createTable($table);
 
         $date = Carbon::parse($date_time)->format('Y-m-d');
@@ -32,6 +35,7 @@ trait DBActions
 
         if ($home_team && $away_team) {
 
+
             $games = gameModel($table);
             $exists = $games->where([['competition_abbreviation', $competition_abbreviation], ['home_team_id', $home_team->id], ['away_team_id', $away_team->id]])->where('date', $date)->first();
 
@@ -44,34 +48,46 @@ trait DBActions
                 'ft_results' => $ft_results,
             ];
 
-            if (!$exists) {
 
-                $arr = array_merge($arr, [
-                    'home_team_id' => $home_team->id,
-                    'away_team_id' => $away_team->id,
-                    'competition_abbreviation' => $competition_abbreviation,
-                    'url' => $url,
-                ]);
+            try {
+                DB::beginTransaction();
 
-                $games->create($arr);
+                $msg = '';
+                if (!$exists) {
 
-                $repo = new EloquentRepository(CompetitionAbbreviation::class);
+                    $arr = array_merge($arr, [
+                        'home_team_id' => $home_team->id,
+                        'away_team_id' => $away_team->id,
+                        'competition_abbreviation' => $competition_abbreviation,
+                        'url' => $url,
+                    ]);
 
-                $msg = 'Game saved';
-                if (!$repo->model->where('name', $competition_abbreviation)->first()) {
-                    $repo->create(['name' => $competition_abbreviation]);
-                    $msg = 'Game saved -- ' . $competition_abbreviation . ' abbrv saved';
+                    $games->create($arr);
+
+                    $competition_abbreviation = Common::saveCompetitionAbbreviation($competition_abbreviation);
+
+                    $msg = 'Game saved';
+
+                    if ($competition_abbreviation->created)
+                        $msg = 'Game saved -- ' . $competition_abbreviation . ' abbrv saved';
+
+                } else {
+
+                    if (Carbon::now()->diffInDays($date_time) <= 7) {
+                        $exists->update($arr);
+                        $msg = 'Game updated';
+                    } else
+                        $msg = 'Game stale, no update';
                 }
 
+                DB::commit();
                 return $msg;
-            } else {
-
-                if (Carbon::now()->diffInDays($date_time) <= 7) {
-                    $exists->update($arr);
-                    return 'Game updated';
-                } else
-                    return 'Game stale, no update';
+            } catch (Exception $e) {
+                DB::rollBack();
+                Log::info('Game save failed:', ['err' => $e->getMessage()]);
             }
+
+
         } elseif ($home_team) {
             return 'Away team not found, (' . $away_team_init . ')';
         } elseif ($away_team) {
@@ -94,7 +110,7 @@ trait DBActions
         else
             $competition = Common::saveCompetition($data['competition_url'], $data['competition']);
 
-        $table = Carbon::parse($data['date_time'])->timezone('GMT')->format('Y') . '_games';
+        $table = Carbon::parse($data['date_time'])->format('Y') . '_games';
         $this->createTable($table);
 
         $date = Carbon::parse($data['date_time'])->format('Y-m-d');
@@ -110,6 +126,7 @@ trait DBActions
                 'date_time' => $data['date_time'],
                 'date' => $date,
                 'time' => $time,
+                'has_time' => $data['has_time'],
                 'ht_results' => $data['ht_results'],
                 'ft_results' => $data['ft_results'],
                 'update_status' => 1,
@@ -144,6 +161,7 @@ trait DBActions
                 'date_time' => $data['date_time'],
                 'date' => $date,
                 'time' => $time,
+                'has_time' => $data['has_time'],
                 'home_team' => $this->game['home_team'],
                 'away_team' => $this->game['away_team'],
                 'one_x_two' => $data['one_x_two'],
@@ -158,6 +176,9 @@ trait DBActions
         } else {
             // delete fixture, date changed
             DB::table($this->game['table'])->where('id', $this->game['id'])->delete();
+            Odds::whereGame($this->game['table'])->delete();
+
+            Log::critical('Deleted fixture:', ['data' => $this->game]);
 
             return 'Fixture deleted';
         }
@@ -215,6 +236,7 @@ trait DBActions
                 $table->dateTime('date_time');
                 $table->date('date');
                 $table->time('time')->nullable();
+                $table->boolean('has_time')->default(0);
                 $table->uuid('home_team_id');
                 $table->uuid('away_team_id');
                 $table->string('ht_results')->nullable();

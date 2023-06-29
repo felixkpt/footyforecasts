@@ -296,7 +296,6 @@ class Common
 
         return $res;
     }
-
     static function saveTeamLogo($team_id, $source)
     {
         $exists = self::teamRepo()->findById($team_id);
@@ -314,6 +313,20 @@ class Common
         }
 
         return false;
+    }
+
+
+    static function saveCompetitionAbbreviation($competition_abbreviation)
+    {
+        $repo = new EloquentRepository(CompetitionAbbreviation::class);
+
+        $res = $repo->model->where('name', $competition_abbreviation)->first();
+        if (!$res)
+            $res = $repo->create(['name' => $competition_abbreviation]);
+        else
+            $res->created = true;
+
+        return $res;
     }
 
     static function getCountrySlug($source)

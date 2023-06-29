@@ -23,9 +23,9 @@ class DetailedFixturesJob implements ShouldQueue, FixturesInterface
 
     // Properties
     // in mins
-    protected $script_max_duration = 5;
-    protected $last_fetch_minutes = 1;
-    protected $last_fetch_minutes_teams = 20;
+    protected $script_max_duration = 6;
+    protected $last_fetch_minutes = 2;
+    protected $last_fetch_minutes_teams = 30;
     protected $start;
     protected $stop;
     private $repo;
@@ -49,7 +49,6 @@ class DetailedFixturesJob implements ShouldQueue, FixturesInterface
 
         $this->repo = new CompetitionRepository();
         $this->teamRepo = new TeamRepository();
-
 
         $i = 0;
         while (True) {

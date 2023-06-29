@@ -77,9 +77,12 @@ class CompetitionController extends Controller
 
         $all_res = [];
         $repo = new TeamRepository();
-        $repo->model->where('competition_id', $id)->where(function ($q) use ($testdate) {
+        $repo->model
+        // ->where('id', '01h40p8jm45fzpkwwvk121hnzr')
+        ->where('competition_id', $id)->where(function ($q) use ($testdate) {
             $q->where('last_fetch', '<=', $testdate)->orWhereNull('last_fetch');
-        })->orderby('last_fetch', 'asc')
+        })
+        ->orderby('last_fetch', 'asc')
             ->chunk($chunk, function ($teams) use (&$all_res) {
 
                 // Stop chunk processing of limit is supplied and reached
@@ -155,8 +158,8 @@ class CompetitionController extends Controller
 
         $competition = $this->repo->findById($id, ['*']);
 
-        $games = $game->where('competition_id', $id)->where('fetching_fixture_state', 0)->get();
-        $recently_fetched_games = $game->where('competition_id', $id)->where('fetching_fixture_state', '>', 0)->get();
+        $games = $game->where('competition_id', $id)->where('update_status', 0)->get();
+        $recently_fetched_games = $game->where('competition_id', $id)->where('update_status', '>', 0)->get();
 
         $competition = array_merge($competition->toArray(), ['games' => $games->toArray(), 'recentlyFetchedGames' => $recently_fetched_games->toArray()]);
 

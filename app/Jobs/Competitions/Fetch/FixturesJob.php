@@ -35,7 +35,7 @@ class FixturesJob implements ShouldQueue, FixturesInterface
     protected $chunk = 3;
     protected $limit = 15;
     protected $chunk_teams = 3;
-    protected $limit_teams = 9;
+    protected $limit_teams = 10;
 
     /**
      * Create a new job instance.

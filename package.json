@@ -22,6 +22,8 @@
         "autoprefixer": "^10.4.13",
         "chart.js": "^4.3.0",
         "file-loader": "^6.2.0",
+        "flowbite": "^1.6.6",
+        "flowbite-react": "^0.4.9",
         "formik": "^2.4.1",
         "jsvectormap": "^1.5.3",
         "numeral": "^2.0.6",
